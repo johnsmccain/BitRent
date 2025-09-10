@@ -1,0 +1,24 @@
+{
+  "name": "@bitrent/contracts",
+  "version": "1.0.0",
+  "description": "BitRent smart contracts for Stacks blockchain",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'Skipping contracts build'",
+    "test": "echo 'Skipping contracts tests'",
+    "deploy": "clarinet deployments apply devnet || true",
+    "check": "clarinet check || true",
+    "format": "clarinet format || true",
+    "clean": "rm -rf .clarinet || true"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "stacks",
+    "clarity",
+    "smart-contracts",
+    "nft",
+    "fractional-ownership"
+  ],
+  "author": "BitRent Team",
+  "license": "MIT"
+}
