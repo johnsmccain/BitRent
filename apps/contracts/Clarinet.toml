@@ -1,0 +1,11 @@
+[project]
+name = "bitrent"
+version = "1.0.0"
+
+[contracts.bitrent-fractional-nft]
+path = "contracts/bitrent-fractional-nft.clar"
+
+[contracts.bitrent-revenue-split]
+path = "contracts/bitrent-revenue-split.clar"
+
+

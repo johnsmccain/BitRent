@@ -17,7 +17,7 @@
 (define-non-fungible-token bitrent-property (string-ascii 100))
 
 ;; Fraction ownership mapping
-(define-map fraction-owners principal u1000)
+(define-map fraction-owners principal uint)
 
 ;; Events (use print for portability)
 
@@ -31,33 +31,32 @@
 ;; Public functions
 
 ;; List a property for fractional ownership
-(define-public (list-property (property-id (string-ascii 100)) (price u1000000))
+(define-public (list-property (property-id (string-ascii 100)) (price uint))
   (begin
     (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR-UNAUTHORIZED)
     (asserts! (> price MIN_FRACTION_PRICE) ERR-INVALID-PRICE)
-    (data-var-set property-data property-id)
-    (data-var-set property-owner tx-sender)
-    (data-var-set total-fractions TOTAL_SUPPLY)
-    (data-var-set fraction-price price)
-    (data-var-set is-listed true)
+    (var-set property-data property-id)
+    (var-set property-owner tx-sender)
+    (var-set total-fractions TOTAL_SUPPLY)
+    (var-set fraction-price price)
+    (var-set is-listed true)
     (ok (print (tuple (event "property-listed") (property-id property-id) (owner tx-sender) (price price))))
   )
 )
 
 ;; Purchase fractions of a property
-(define-public (purchase-fractions (property-id (string-ascii 100)) (amount u1000))
-  (let ((payment (* amount (data-var-get fraction-price))))
+(define-public (purchase-fractions (property-id (string-ascii 100)) (amount uint))
+  (let ((payment (* amount (var-get fraction-price))))
     (begin
-      (asserts! (data-var-get is-listed) ERR-PROPERTY-NOT-LISTED)
-      (asserts! (>= (data-var-get total-fractions) amount) ERR-INSUFFICIENT-FRACTIONS)
-      (asserts! (>= tx-amount payment) ERR-INSUFFICIENT-PAYMENT)
+      (asserts! (var-get is-listed) ERR-PROPERTY-NOT-LISTED)
+      (asserts! (>= (var-get total-fractions) amount) ERR-INSUFFICIENT-FRACTIONS)
+      (asserts! (is-ok (stx-transfer? payment tx-sender (var-get property-owner))) ERR-INSUFFICIENT-PAYMENT)
       
       ;; Update ownership
       (map-set fraction-owners tx-sender (+ (default-to u0 (map-get? fraction-owners tx-sender)) amount))
-      (data-var-set total-fractions (- (data-var-get total-fractions) amount))
+      (var-set total-fractions (- (var-get total-fractions) amount))
       
-      ;; Transfer STX to property owner
-      (stx-transfer? payment tx-sender (data-var-get property-owner))
+      ;; STX transfer already attempted above
       
       ;; Mint NFT if this is the first fraction
       (if (is-eq (map-get? fraction-owners tx-sender) amount)
@@ -71,18 +70,18 @@
 )
 
 ;; Sell fractions back
-(define-public (sell-fractions (property-id (string-ascii 100)) (amount u1000))
-  (let ((refund (* amount (data-var-get fraction-price))))
+(define-public (sell-fractions (property-id (string-ascii 100)) (amount uint))
+  (let ((refund (* amount (var-get fraction-price))))
     (begin
-      (asserts! (data-var-get is-listed) ERR-PROPERTY-NOT-LISTED)
+      (asserts! (var-get is-listed) ERR-PROPERTY-NOT-LISTED)
       (asserts! (>= (default-to u0 (map-get? fraction-owners tx-sender)) amount) ERR-INSUFFICIENT-FRACTIONS)
       
       ;; Update ownership
       (map-set fraction-owners tx-sender (- (map-get? fraction-owners tx-sender) amount))
-      (data-var-set total-fractions (+ (data-var-get total-fractions) amount))
+      (var-set total-fractions (+ (var-get total-fractions) amount))
       
       ;; Transfer STX back to seller
-      (stx-transfer? refund (data-var-get property-owner) tx-sender)
+      (stx-transfer? refund (var-get property-owner) tx-sender)
       
       ;; Burn NFT if no fractions left
       (if (is-eq (map-get? fraction-owners tx-sender) u0)
@@ -98,10 +97,10 @@
 ;; Get property information
 (define-read-only (get-property-info (property-id (string-ascii 100)))
   (ok (tuple
-    (owner (data-var-get property-owner))
-    (total-fractions (data-var-get total-fractions))
-    (fraction-price (data-var-get fraction-price))
-    (is-listed (data-var-get is-listed))
+    (owner (var-get property-owner))
+    (total-fractions (var-get total-fractions))
+    (fraction-price (var-get fraction-price))
+    (is-listed (var-get is-listed))
   ))
 )
 
@@ -118,11 +117,11 @@
 ;; Contract owner functions
 
 ;; Update fraction price
-(define-public (update-fraction-price (new-price u1000000))
+(define-public (update-fraction-price (new-price uint))
   (begin
     (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR-UNAUTHORIZED)
     (asserts! (> new-price MIN_FRACTION_PRICE) ERR-INVALID-PRICE)
-    (data-var-set fraction-price new-price)
+    (var-set fraction-price new-price)
     (ok true)
   )
 )
@@ -131,7 +130,7 @@
 (define-public (delist-property)
   (begin
     (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR-UNAUTHORIZED)
-    (data-var-set is-listed false)
+    (var-set is-listed false)
     (ok true)
   )
 )
